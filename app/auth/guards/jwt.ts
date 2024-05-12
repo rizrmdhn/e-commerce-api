@@ -64,6 +64,66 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   }
 
   /**
+   * Generate a JWT token with custom expiration for a given user.
+   */
+  async generateWithCustomExpiration(
+    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
+    expiresIn: string
+  ) {
+    const providerUser = await this.#userProvider.createUserForGuard(user)
+    const token = jwt.sign({ userId: providerUser.getId() }, this.#options.secret, {
+      expiresIn: expiresIn,
+    })
+
+    return {
+      type: 'bearer',
+      token,
+    }
+  }
+
+  /**
+   * Generate a JWT token with refresh token for a given user.
+   */
+  async generateWithRefreshToken(user: UserProvider[typeof symbols.PROVIDER_REAL_USER]) {
+    const providerUser = await this.#userProvider.createUserForGuard(user)
+    const token = jwt.sign({ userId: providerUser.getId() }, this.#options.secret, {
+      expiresIn: '2h',
+    })
+    const refreshToken = jwt.sign({ userId: providerUser.getId() }, this.#options.secret, {
+      expiresIn: '7d',
+    })
+
+    return {
+      type: 'bearer',
+      token,
+      refreshToken,
+    }
+  }
+
+  /**
+   * Generate a JWT token with refresh token with custom expiration for a given user.
+   */
+  async generateWithRefreshTokenWithCustomExpiration(
+    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
+    tokenExpiration: string,
+    refreshTokenExpiration: string
+  ) {
+    const providerUser = await this.#userProvider.createUserForGuard(user)
+    const token = jwt.sign({ userId: providerUser.getId() }, this.#options.secret, {
+      expiresIn: tokenExpiration,
+    })
+    const refreshToken = jwt.sign({ userId: providerUser.getId() }, this.#options.secret, {
+      expiresIn: refreshTokenExpiration,
+    })
+
+    return {
+      type: 'bearer',
+      token,
+      refreshToken,
+    }
+  }
+
+  /**
    * Authenticate the current HTTP request and return
    * the user instance if there is a valid JWT token
    * or throw an exception
